@@ -26,15 +26,16 @@ public class ServerChat extends JFrame {
     private JTextField textField;
     private static JTextArea textArea;
     private static ServerSocket serverSocket;
-    private static final int PORT = 6888;
+    private static int PORT=6888 ;
     private static List<PrintWriter> clientWriters = new ArrayList<>(); 
+    private JTextField txtPort;
+    private JButton btnConnect;
 
     public static void main(String[] args) {
         EventQueue.invokeLater(() -> {
             try {
                 ServerChat frame = new ServerChat();
                 frame.setVisible(true);
-                startServer();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -50,7 +51,7 @@ public class ServerChat extends JFrame {
         contentPane.setLayout(null);
 
         textArea = new JTextArea();
-        textArea.setBounds(44, 57, 430, 211);
+        textArea.setBounds(44, 106, 430, 162);
         contentPane.add(textArea);
 
         JLabel lblNewLabel = new JLabel("Server");
@@ -70,18 +71,44 @@ public class ServerChat extends JFrame {
         textField.setBounds(44, 305, 430, 20);
         contentPane.add(textField);
         textField.setColumns(10);
-
- 
+        
+        txtPort = new JTextField();
+        txtPort.setColumns(10);
+        txtPort.setBounds(206, 57, 96, 20);
+        contentPane.add(txtPort);
+        
+        JLabel lblNewLabel_1 = new JLabel("PORT");
+        lblNewLabel_1.setBounds(152, 60, 49, 14);
+        contentPane.add(lblNewLabel_1);
+        txtPort.setText(String.valueOf(PORT));
+        
+        btnConnect = new JButton("Connect");
+        btnConnect.addActionListener(new ActionListener() {
+        	public void actionPerformed(ActionEvent e) {
+                PORT=Integer.parseInt(txtPort.getText());
+                startServer();
+        	}
+        });
+        btnConnect.setBounds(312, 56, 89, 23);
+        contentPane.add(btnConnect);
     }
 
     private static void startServer() {
+    	 if (serverSocket != null && !serverSocket.isClosed()) {
+    	        try {
+    	            serverSocket.close();
+    	            clientWriters.clear(); 
+    	        } catch (IOException e) {
+    	            e.printStackTrace();
+    	        }
+    	    }
         new Thread(() -> {
             try {
                 serverSocket = new ServerSocket(PORT);
-                textArea.append("Server đang lắng nghe trên cổng "+PORT+"...\n");
+                textArea.append("Server is listening on port: "+PORT+"...\n");
                 while (true) {
                     Socket clientSocket = serverSocket.accept();
-                    textArea.append("Client đã kết nối.\n");
+                    textArea.append("Client is connected.\n");
                     new Thread(() -> handleClient(clientSocket)).start();
                 }
             } catch (IOException e) {
@@ -120,7 +147,7 @@ public class ServerChat extends JFrame {
                 broadcastMessage(message);
             }
         } catch (IOException e) {
-            textArea.append("Client ngắt kết nối.\n"); 
+            textArea.append("Client is disconnected.\n"); 
         } finally {
             if (writer != null) {
                 synchronized (clientWriters) {
@@ -145,5 +172,4 @@ public class ServerChat extends JFrame {
             textField.setText("");
         }
     }
-
 }

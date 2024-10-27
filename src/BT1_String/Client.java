@@ -1,30 +1,34 @@
 package BT1_String;
 
 import java.awt.EventQueue;
+
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.border.EmptyBorder;
+import javax.swing.JLabel;
+import javax.swing.JTextField;
+import javax.swing.JButton;
+import java.awt.Font;
+import javax.swing.JTextArea;
+import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.border.EmptyBorder;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.JButton;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
 public class Client extends JFrame {
 
 	private static final long serialVersionUID = 1L;
 	private JPanel contentPane;
-	private Socket socket;
-	private JTextField textField;
+	private JTextField txtPort;
+	private JTextField txt_String;
 	private JTextArea textArea;
-    private BufferedReader in;
-    private PrintWriter out;
+	private int PORT=1234;
+    private Socket socket;
+    private PrintWriter writer;
+    private BufferedReader reader;
 
 	/**
 	 * Launch the application.
@@ -47,55 +51,83 @@ public class Client extends JFrame {
 	 */
 	public Client() {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 474, 336);
+		setBounds(100, 100, 545, 396);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 
 		setContentPane(contentPane);
 		contentPane.setLayout(null);
 		
-		textArea = new JTextArea();
-		textArea.setBounds(59, 72, 339, 197);
-		contentPane.add(textArea);
+		JLabel lblPort = new JLabel("Port:");
+		lblPort.setBounds(127, 20, 49, 14);
+		contentPane.add(lblPort);
 		
-		textField = new JTextField();
-		textField.setBounds(57, 41, 243, 20);
-		contentPane.add(textField);
-		textField.setColumns(10);
+		txtPort = new JTextField("");
+		txtPort.setBounds(186, 17, 96, 20);
+		contentPane.add(txtPort);
 		
-		JButton btnNewButton = new JButton("send");
-		btnNewButton.addActionListener(new ActionListener() {
+		JButton btnConnect = new JButton("Connect");
+		btnConnect.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				String text=textField.getText();
-				if(!text.isEmpty()) {
-					out.println(text);
-					try {
-					    StringBuilder response = new StringBuilder();
-					    String line;
-					    
-					    while ((line = in.readLine()) != null && !line.isEmpty()) {
-					        response.append(line).append("\n");
-					    }
-					    textArea.append(response.toString());
-					}catch(IOException ex){
-						ex.printStackTrace();
-					}
-				}
+				try {
+	                PORT = Integer.parseInt(txtPort.getText());
+	                connectToServer(PORT);
+	            } catch (NumberFormatException ex) {
+	                textArea.append("Please enter a valid port number.\n");
+	            }
+				
 			}
 		});
-		btnNewButton.setBounds(332, 38, 66, 23);
-		contentPane.add(btnNewButton);
-		ConnectToServer();
+		btnConnect.setFont(new Font("Tahoma", Font.PLAIN, 14));
+		btnConnect.setBounds(292, 11, 100, 28);
+		contentPane.add(btnConnect);
+		
+		JLabel lblQuery = new JLabel("String:");
+		lblQuery.setBounds(47, 65, 70, 14);
+		contentPane.add(lblQuery);
+		
+		txt_String = new JTextField();
+		txt_String.setColumns(10);
+		txt_String.setBounds(127, 62, 250, 20);
+		contentPane.add(txt_String);
+		
+		JButton btnSend = new JButton("Send");
+		btnSend.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				sendRequest();
+			}
+		});
+		btnSend.setBounds(387, 61, 70, 23);
+		contentPane.add(btnSend);
+		
+		textArea = new JTextArea();
+		textArea.setBounds(57, 109, 424, 226);
+		contentPane.add(textArea);
+		txtPort.setText(String.valueOf(PORT));
 	}
-	public void ConnectToServer() {
-		try {
-			socket=new Socket("localhost",6867);
-			in=new BufferedReader(new InputStreamReader(socket.getInputStream()));
-			out=new PrintWriter(socket.getOutputStream(),true);		
+    private void connectToServer(int port) {
+         try {
+			socket=new Socket("localhost",PORT);
+            writer = new PrintWriter(socket.getOutputStream(), true);
+            reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            textArea.append("Connected to server on port " + port + ".\n");
 		} catch (IOException e) {
-			// TODO: handle exception
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
-	}
+    }
+    private void sendRequest() {
+    	try {
+			writer.println(txt_String.getText());
+			String res;
+			while((res=reader.readLine())!=null) {
+                if (res.isEmpty()) {  
+                    break;
+                }
+                textArea.append(res + "\n");
+			}
+		} catch (Exception e) {
+			// TODO: handle exception
+		}
+    }
 }
